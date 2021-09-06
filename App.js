@@ -1,7 +1,32 @@
+import Amplify from '@aws-amplify/core';
+import { DataStore } from '@aws-amplify/datastore';
 import { StatusBar } from 'expo-status-bar';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, Image, SafeAreaView, } from 'react-native';
-export default function App(){;
+import { Todo } from './src/models';
+import awsconfig from './src/aws-exports'
+import { constant } from 'async';
+
+Amplify.configure(awsconfig);
+
+const display = []
+
+export default function App(){
+
+  const [displayState, updateDisplay] = useState(display);
+  useEffect(() => {
+    fetchTodo();
+    const subscription = DataStore.observe(Todo).subscribe(() => 
+    fetchTodo()
+    );
+    return () => subscription.unsubscribe();
+  });
+
+  async function fetchTodo() {
+    const displayState = (await DataStore.query(Todo,"0e3e8ff1-e709-473b-84ff-50d2edc972fb")).name
+    updateDisplay(displayState);
+  }
+
   const getCurrentDate=()=>{
 
     let date = new Date().getDate();
@@ -10,9 +35,18 @@ export default function App(){;
 
     //Alert.alert(date + '-' + month + '-' + year);
     // You can turn it in to your desired format
+
     return date + '-' + month + '-' + year;//format: dd-mm-yyyy;
-}
+  }
+
   return (
+
+
+
+
+
+
+
   <SafeAreaView  style={styles.centering}>
 
     <Image
@@ -26,16 +60,17 @@ export default function App(){;
         </Text>
 
         <Text>
-        {getCurrentDate()}
+         {getCurrentDate()}
         </Text>
-
     </View>
+
+
   
 
     <View>
         <View style={styles.greyBox}/>
-        <Text style={styles.carbonUsage}>
-          500Kg
+        <Text>
+          {displayState}
         </Text>
     </View>
 

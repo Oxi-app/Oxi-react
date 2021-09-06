@@ -1,0 +1,21 @@
+{
+    "appName": "oxireact",
+    "roleName": "pinpointLambdaRolec3940458",
+    "cloudformationPolicyName": "cloudformationPolicyc3940458",
+    "cloudWatchPolicyName": "cloudWatchPolicyc3940458",
+    "pinpointPolicyName": "pinpointPolicyc3940458",
+    "authPolicyName": "pinpoint_amplify_c3940458",
+    "unauthPolicyName": "pinpoint_amplify_c3940458",
+    "authRoleName": {
+        "Ref": "AuthRoleName"
+    },
+    "unauthRoleName": {
+        "Ref": "UnauthRoleName"
+    },
+    "authRoleArn": {
+        "Fn::GetAtt": [
+            "AuthRole",
+            "Arn"
+        ]
+    }
+}
