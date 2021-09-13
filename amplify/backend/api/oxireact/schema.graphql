@@ -1,9 +1,8 @@
-type Todo @model @auth(
-    rules: [
-      { allow: public},
-    ]) {
+type Transactions @model @auth(rules: [{allow: public}]) {
   id: ID!
-  name: String!
-  description: String
+  Merchant: String
+  Name: String
+  Price: Float
+  Carbon: Int
 }
  

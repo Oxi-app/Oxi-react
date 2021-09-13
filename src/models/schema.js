@@ -1,7 +1,7 @@
 export const schema = {
     "models": {
-        "Todo": {
-            "name": "Todo",
+        "Transactions": {
+            "name": "Transactions",
             "fields": {
                 "id": {
                     "name": "id",
@@ -10,17 +10,31 @@ export const schema = {
                     "isRequired": true,
                     "attributes": []
                 },
-                "name": {
-                    "name": "name",
+                "Merchant": {
+                    "name": "Merchant",
                     "isArray": false,
                     "type": "String",
-                    "isRequired": true,
+                    "isRequired": false,
                     "attributes": []
                 },
-                "description": {
-                    "name": "description",
+                "Name": {
+                    "name": "Name",
                     "isArray": false,
                     "type": "String",
+                    "isRequired": false,
+                    "attributes": []
+                },
+                "Price": {
+                    "name": "Price",
+                    "isArray": false,
+                    "type": "Float",
+                    "isRequired": false,
+                    "attributes": []
+                },
+                "Carbon": {
+                    "name": "Carbon",
+                    "isArray": false,
+                    "type": "Int",
                     "isRequired": false,
                     "attributes": []
                 },
@@ -42,7 +56,7 @@ export const schema = {
                 }
             },
             "syncable": true,
-            "pluralName": "Todos",
+            "pluralName": "Transactions",
             "attributes": [
                 {
                     "type": "model",
@@ -69,5 +83,5 @@ export const schema = {
     },
     "enums": {},
     "nonModels": {},
-    "version": "4401034582a70c60713e1f7f9da3b752"
+    "version": "283eb4e321a266b1fabdf146d4cb90d7"
 };

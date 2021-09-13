@@ -2,52 +2,92 @@ import Amplify from '@aws-amplify/core';
 import { DataStore } from '@aws-amplify/datastore';
 import { StatusBar } from 'expo-status-bar';
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, Image, SafeAreaView, } from 'react-native';
-import { Todo } from './src/models';
+import { StyleSheet, Text, TextInput, View, Image, Keyboard, TouchableWithoutFeedback, SafeAreaView, Button, Modal, Alert, Pressable } from 'react-native';
+import { Transactions } from './src/models';
 import awsconfig from './src/aws-exports'
 import { constant } from 'async';
 
 Amplify.configure(awsconfig);
 
-const display = []
+const carbon = []
+
+const HideKeyboard = ({ children }) => (
+  <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
+    {children}
+  </TouchableWithoutFeedback>
+);
 
 export default function App(){
 
-  const [displayState, updateDisplay] = useState(display);
+  const [modalVisible, setModalVisible] = useState(false);
+
+  const [merchant, onChangeText] = React.useState(null);
+  const [item, onChangeText2] = React.useState(null);
+  const [amount, onChangeNumber] = React.useState(null);
+  const [emissions, onChangeNumber2] = React.useState(null);
+
+  const [carbonState, updateCarbon] = useState(carbon);
+
   useEffect(() => {
-    fetchTodo();
-    const subscription = DataStore.observe(Todo).subscribe(() => 
-    fetchTodo()
+    fetchCarbon();
+    const subscription = DataStore.observe(Transactions).subscribe(() => 
+    fetchCarbon()
     );
     return () => subscription.unsubscribe();
   });
 
-  async function fetchTodo() {
-    const displayState = (await DataStore.query(Todo,"0e3e8ff1-e709-473b-84ff-50d2edc972fb")).name
-    updateDisplay(displayState);
+  async function fetchCarbon() {
+    const allCarbons = ( (await DataStore.query(Transactions)))   
+    console.log(allCarbons)
+    const values = allCarbons.map(c => c.Carbon)
+    console.log(values)
+    const carbonState = values.reduce((x, y) => x + y)
+    // const carbonState = ((await DataStore.query(Transactions, "50e6be72-9754-4d04-a3ae-3ed876f22221")).Carbon)
+    updateCarbon(carbonState);
   }
 
-  const getCurrentDate=()=>{
+  async function createCarbon() {
+    await DataStore.save(new Transactions({
+		Merchant: Merchant,
+		Name: Item,
+		Price: Amount,
+		Carbon: Emissions
+    }));
+    onChangeText({merchant: null})
+    onChangeText2({item: null})
+    onChangeNumber({amount: null})
+    onChangeNumber2({emissions: null})
+    }
 
+  // async function replaceCarbon() {
+  //   const replace = ((await DataStore.query(Transactions, "50e6be72-9754-4d04-a3ae-3ed876f22221")))
+  //   await DataStore.save(Transactions.copyOf(replace, updated =>{
+  //   updated.Merchant = Merchant
+  //   updated.Name = Item
+  //   updated.Price = Amount,
+  //   updated.Carbon = Emissions,
+  //   updateCarbon(carbonState)
+  //   }));
+  //   }
+
+  const getCurrentDate=()=>{
     let date = new Date().getDate();
     let month = new Date().getMonth() + 1;
     let year = new Date().getFullYear();
-
     //Alert.alert(date + '-' + month + '-' + year);
     // You can turn it in to your desired format
-
     return date + '-' + month + '-' + year;//format: dd-mm-yyyy;
   }
 
+  const Merchant = merchant
+  const Item = item
+  const Amount = parseInt(amount)
+  const Emissions = parseInt(emissions)
+
   return (
 
-
-
-
-
-
-
   <SafeAreaView  style={styles.centering}>
+
 
     <Image
         style={styles.tinyLogo}
@@ -59,7 +99,7 @@ export default function App(){
         My carbon usage:
         </Text>
 
-        <Text>
+        <Text >
          {getCurrentDate()}
         </Text>
     </View>
@@ -69,8 +109,8 @@ export default function App(){
 
     <View>
         <View style={styles.greyBox}/>
-        <Text>
-          {displayState}
+        <Text style={styles.carbonUsage}>
+          {carbonState} Kg
         </Text>
     </View>
 
@@ -139,12 +179,90 @@ export default function App(){
  
     </View>
 
-    <View style = {styles.container4}>
+      
+    <View style={styles.centeredView}>
+          <Modal
+            animationType="slide"
+            transparent={true}
+            visible={modalVisible}
+            onRequestClose={() => {
+              Alert.alert("Modal has been closed.");
+              setModalVisible(!modalVisible);
+            }}
+          >
+            <View style={styles.centeredView2}>
+              <View style={styles.modalView}>
+                
 
-    <View style={styles.blueBox3}/>
-    <Text style={styles.oxipay}>OxiPay</Text>
-    </View>
+            <View style = {styles.container9}>
+              <Pressable
+                style={[styles.modalButtonClose, styles.buttonClose]}
+                onPress={() => setModalVisible(!modalVisible)}
+              >
+                <Text style={styles.textStyle}>Close</Text>
+              </Pressable>
+              <Pressable
+                    style={[styles.modalButtonEnter, styles.buttonClose]}
+                    onPress={createCarbon}
+                  >
+                    <Text style={styles.textStyle}>Enter</Text>
+              </Pressable>
+            </View>
 
+
+            <HideKeyboard>
+              <View style = {styles.inputs}>
+
+              <Text style={styles.modalText}>What did you buy?</Text>
+ 
+
+              <TextInput
+                  style={styles.input}
+                  onChangeText={onChangeText}
+                  placeholder="Merchant"
+                  value={merchant}
+                />
+               <TextInput
+                  style={styles.input}
+                  onChangeText={onChangeText2}
+                  placeholder="Item"
+                  value={item}
+                />
+                <TextInput
+                  keyboardType="numeric"
+                  style={styles.input}
+                  onChangeText={onChangeNumber}
+                  value={amount}
+                  placeholder="Amount"
+                />
+                <TextInput
+                  keyboardType="numeric"
+                  style={styles.input}
+                  onChangeText={onChangeNumber2}
+                  value={emissions}
+                  placeholder="Emissions"
+                />
+
+              </View>
+
+            </HideKeyboard>              
+                   
+
+              </View>
+              
+            </View>
+
+
+          </Modal>
+          <Pressable
+            style={[styles.modalButtonOxiPay, styles.buttonOpen]}
+            onPress={() => setModalVisible(true)}
+          >
+            <Text style={styles.oxipay}>OxiPay</Text>
+          </Pressable>
+        </View>
+
+        
     <View style={styles.horizontalLine}/>
 
     <View style={styles.container5}>
@@ -161,10 +279,14 @@ export default function App(){
 
     </View>
 
+
+
+
   </SafeAreaView>
   )
- 
-}
+  
+  }
+
 
 const styles = StyleSheet.create({
 
@@ -178,6 +300,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between', 
     alignItems: 'center',
   },
+
+  
 
   container1: {
     width: 340,
@@ -198,11 +322,11 @@ const styles = StyleSheet.create({
   },
 
   carbonUsage: {
-    fontSize: 48,
+    fontSize: 44,
     color: '#00C2FF',
     position: 'absolute',
     left: 25,
-    top: 2
+    top: 5
   },
 
   horizontalLine: {
@@ -265,7 +389,7 @@ const styles = StyleSheet.create({
     color: 'white',
     position: 'absolute',
     top: 3,
-    right: 25,
+    right: 20,
   },
 
   oxiac: {
@@ -338,10 +462,11 @@ const styles = StyleSheet.create({
   },
 
   oxipay: {
+    color: "white",
+    textAlign: "center",
     fontSize: 24,
-    color: 'white',
-    position: 'absolute',
-    left: 113,
+    position: 'relative',
+    top: 15
   },
 
   container8: {
@@ -354,5 +479,85 @@ const styles = StyleSheet.create({
   exchangebutton: {
     height: 15,
     width: 15,
+    position: 'absolute',
+    top: 10
+  },
+
+  centeredView: {
+    justifyContent: "center",
+  },
+
+  modalView: {
+    margin: 20,
+    backgroundColor: "white",
+    borderRadius: 20,
+    padding: 25,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5
+  },
+  modalButtonClose: {
+    height: 30,
+    width: 70,
+    borderRadius: 10,
+  },
+  modalButtonEnter: {
+    height: 30,
+    width: 70,
+    borderRadius: 10,
+  },
+  modalButtonOxiPay: {
+    height: 59,
+    width: 294,
+    borderRadius: 10,
+  },
+  buttonOpen: {
+    backgroundColor: "#00C2FF",
+  },
+  buttonClose: {
+    backgroundColor: "#00C2FF",
+  },
+  textStyle: {
+    color: "white",
+    textAlign: "center",
+    fontSize: 15,
+    position: 'relative',
+    top: 5
+  },
+  modalText: {
+    padding: 10,
+    justifyContent: "center",
+    textAlign: "center"
+  },
+  centeredView2: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 22
+  },
+  input: {
+    height: 40,
+    margin: 12,
+    borderWidth: 1,
+    padding: 10,
+    width: 100,
+    borderRadius: 10,
+  },
+  inputs: {
+    width: 300,
+    height: 300,
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  container9:{
+    width: 300,
+    flexDirection: 'row',
+    justifyContent: 'space-between'
   }
 });
