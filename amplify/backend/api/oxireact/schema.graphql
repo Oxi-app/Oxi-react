@@ -4,5 +4,15 @@ type Transactions @model @auth(rules: [{allow: public}]) {
   Name: String
   Price: Float
   Carbon: Int
+  Barcode: String
+}
+
+type Items @model @auth(rules: [{allow: public}]) {
+  id: ID!
+  Merchant: String
+  Name: String
+  Price: Float
+  Carbon: Int
+  Barcode: String
 }
  

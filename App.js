@@ -3,10 +3,11 @@ import { DataStore } from '@aws-amplify/datastore';
 import { StatusBar } from 'expo-status-bar';
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, TextInput, View, Image, Keyboard, TouchableWithoutFeedback, SafeAreaView, Button, Modal, Alert, Pressable } from 'react-native';
-import { Transactions } from './src/models';
+import { Items, Transactions } from './src/models';
+import { BarCodeScanner } from 'expo-barcode-scanner';
 import awsconfig from './src/aws-exports'
+// import Scanner from './Scanner';
 import { constant } from 'async';
-
 Amplify.configure(awsconfig);
 
 const carbon = []
@@ -21,47 +22,96 @@ export default function App(){
 
   const [modalVisible, setModalVisible] = useState(false);
 
-  const [merchant, onChangeText] = React.useState(null);
-  const [item, onChangeText2] = React.useState(null);
-  const [amount, onChangeNumber] = React.useState(null);
-  const [emissions, onChangeNumber2] = React.useState(null);
+  // const [merchant, onChangeText] = React.useState(null);
+  // const [item, onChangeText2] = React.useState(null);
+  // const [amount, onChangeNumber] = React.useState(null);
+  // const [emissions, onChangeNumber2] = React.useState(null);
 
   const [carbonState, updateCarbon] = useState(carbon);
 
+  const [hasPermission, setHasPermission] = useState(null);
+  const [scanned, setScanned] = useState(false);
+
+  const [barcode, updateBarcode] = useState(null);
+  const [transaction, updatetransaction] = useState(null);
+  const [name, updateNameTransaction] = useState(null);
+
   useEffect(() => {
+    (async () => {
+      const { status } = await BarCodeScanner.requestPermissionsAsync();
+      setHasPermission(status === 'granted');
+    })();
+
     fetchCarbon();
-    const subscription = DataStore.observe(Transactions).subscribe(() => 
+    const subscription = DataStore.observe(Items).subscribe(() => 
     fetchCarbon()
     );
     return () => subscription.unsubscribe();
-  });
 
-  async function fetchCarbon() {
-    const allCarbons = ( (await DataStore.query(Transactions)))   
-    console.log(allCarbons)
-    const values = allCarbons.map(c => c.Carbon)
-    console.log(values)
-    const carbonState = values.reduce((x, y) => x + y)
-    // const carbonState = ((await DataStore.query(Transactions, "50e6be72-9754-4d04-a3ae-3ed876f22221")).Carbon)
-    updateCarbon(carbonState);
+
+  }, []);
+
+  const handleBarCodeScanned = ({ type, data }) => {
+    setScanned(true);
+
+    alert(`Bar code with type ${type} and data ${data} has been scanned!`);
+    updateBarcode(data)
+
+  };
+
+
+  if (hasPermission === null) {
+    return <Text>Requesting for camera permission</Text>;
+  }
+  if (hasPermission === false) {
+    return <Text>No access to camera</Text>;
   }
 
-  async function createCarbon() {
+
+  async function fetchCarbon() {
+    // const allCarbons = ( (await DataStore.query(Items)))   
+    // const carbonState = ((await DataStore.query(Items, "50e6be72-9754-4d04-a3ae-3ed876f22221")).Carbon)
+    const transaction = await DataStore.query(Items, p => p.Barcode("eq", barcode)) 
+    updatetransaction(transaction)
+    const carbonTransaction = transaction.map(p => p.Carbon)
+    const nameTransaction = transaction.map(n => n.Name)
+    const name = nameTransaction.toString()
+    updateNameTransaction(name)
+    const barcodeTransaction = transaction.map(n => n.Barcode)
+    const merchantTransaction = transaction.map(n => n.Merchant)
+    const priceTransaction = transaction.map(n => n.Price)
+  }
+
+  async function createTransaction() {
     await DataStore.save(new Transactions({
-		Merchant: Merchant,
-		Name: Item,
-		Price: Amount,
-		Carbon: Emissions
-    }));
-    onChangeText({merchant: null})
-    onChangeText2({item: null})
-    onChangeNumber({amount: null})
-    onChangeNumber2({emissions: null})
+      // Barcode: barcodeTransaction,
+      // Merchant: merchantTransaction,
+      Name: name,
+      // Price: priceTransaction,
+      // Carbon: carbon,
+      }));
     }
 
+
+
+  // async function createCarbon() {
+  //   await DataStore.save(new Items({
+  //   Barcode: barcode,
+	// 	Merchant: Merchant,
+	// 	Name: Item,
+	// 	Price: Amount,
+	// 	Carbon: Emissions
+  //   }));
+  //   onChangeText({merchant: null})
+  //   onChangeText2({item: null})
+  //   onChangeNumber({amount: null})
+  //   onChangeNumber2({emissions: null})
+  //   updateBarcode({barcode: null})
+  //   }
+
   // async function replaceCarbon() {
-  //   const replace = ((await DataStore.query(Transactions, "50e6be72-9754-4d04-a3ae-3ed876f22221")))
-  //   await DataStore.save(Transactions.copyOf(replace, updated =>{
+  //   const replace = ((await DataStore.query(Items, "50e6be72-9754-4d04-a3ae-3ed876f22221")))
+  //   await DataStore.save(Items.copyOf(replace, updated =>{
   //   updated.Merchant = Merchant
   //   updated.Name = Item
   //   updated.Price = Amount,
@@ -79,10 +129,10 @@ export default function App(){
     return date + '-' + month + '-' + year;//format: dd-mm-yyyy;
   }
 
-  const Merchant = merchant
-  const Item = item
-  const Amount = parseInt(amount)
-  const Emissions = parseInt(emissions)
+  // const Merchant = merchant
+  // const Item = item
+  // const Amount = parseInt(amount)
+  // const Emissions = parseInt(emissions)
 
   return (
 
@@ -173,6 +223,8 @@ export default function App(){
 
             <Text style={styles.cash}>£323.64</Text>
 
+
+
           </View>
 
       </View> 
@@ -203,7 +255,7 @@ export default function App(){
               </Pressable>
               <Pressable
                     style={[styles.modalButtonEnter, styles.buttonClose]}
-                    onPress={createCarbon}
+                    onPress={createTransaction}
                   >
                     <Text style={styles.textStyle}>Enter</Text>
               </Pressable>
@@ -216,7 +268,7 @@ export default function App(){
               <Text style={styles.modalText}>What did you buy?</Text>
  
 
-              <TextInput
+              {/* <TextInput
                   style={styles.input}
                   onChangeText={onChangeText}
                   placeholder="Merchant"
@@ -241,11 +293,22 @@ export default function App(){
                   onChangeText={onChangeNumber2}
                   value={emissions}
                   placeholder="Emissions"
-                />
+                /> */}
 
-              </View>
+                  <View style={styles.container11}>
+                    <BarCodeScanner
+                      onBarCodeScanned={scanned ? undefined : handleBarCodeScanned}
+                      style={StyleSheet.absoluteFillObject}
+                    />
+                    {scanned && <Button title={'Tap to Scan Again'} onPress={() => setScanned(false)} />}
+                  </View>
 
-            </HideKeyboard>              
+                  <Text>
+                    {JSON.stringify(transaction)}
+                  </Text>
+             </View>
+
+            </HideKeyboard>          
                    
 
               </View>
@@ -260,6 +323,9 @@ export default function App(){
           >
             <Text style={styles.oxipay}>OxiPay</Text>
           </Pressable>
+
+         
+          
         </View>
 
         
@@ -551,7 +617,7 @@ const styles = StyleSheet.create({
   },
   inputs: {
     width: 300,
-    height: 300,
+    height: 400,
     justifyContent: 'center',
     alignItems: 'center'
   },
@@ -559,5 +625,14 @@ const styles = StyleSheet.create({
     width: 300,
     flexDirection: 'row',
     justifyContent: 'space-between'
-  }
+  },
+  container10:{
+    flex:1
+  },
+  container11: {
+    width: 250,
+    height: 100,
+    flexDirection: 'column',
+    justifyContent: 'center',
+  },
 });
